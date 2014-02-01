@@ -87,6 +87,8 @@ class XKCD_downloader:
     self.checkPath()
     images = []
     for i in self.getComicRange(comic_number):
+      if i == 404:
+        continue
       if i == 0:
         print("Fetching comic -> Latest".format(i))
       else:
