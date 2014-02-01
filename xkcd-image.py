@@ -6,9 +6,9 @@ from sys import argv
 import os
 
 DOWNLOAD_DIRECTORY = "images"
-TITLE_FONTSIZE = 20
-ALT_FONTSIZE = 12
-LINE_OFFSET = 10
+TITLE_FONTSIZE = 28
+ALT_FONTSIZE = 18
+LINE_OFFSET = 11
 WRAP_WIDTH = 30
 
 def fetchJSON(comic_number):
