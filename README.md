@@ -36,6 +36,16 @@ Fetch all comics (images-only):
 ```shell
 python xkcd_image.py -fetch-all -download-only
 ```
+Fetch a random comic:
+```shell
+python xkcd_image.py -random
+python xkcd_image.py -random -download-only
+```
+Fetch 5 random comics:
+```shell
+python xkcd_image.py -random 5
+python xkcd_image.py -random 5 -download-only
+```
 
 Configuration
 -------------
