@@ -40,4 +40,4 @@ python xkcd_image.py -fetch-all -download-only
 Configuration
 -------------
 
-Title font size, alt text font size, line wrap width, and line offset can be changed through the variables in the top of the script. The script looks for TTF fonts ('title.ttf' and 'alt.ttf') located in the script directory.
+Title font size, alt text font size, and line offset can be changed through the variables in the top of the script. The script looks for TTF fonts ('title.ttf' and 'alt.ttf') located in the script directory.

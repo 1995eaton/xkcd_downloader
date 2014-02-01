@@ -10,14 +10,12 @@ class XKCD_downloader:
                DOWNLOAD_DIRECTORY = "images",
                TITLE_FONTSIZE = 28,
                ALT_FONTSIZE = 18,
-               LINE_OFFSET = 11,
-               WRAP_WIDTH = 30):
+               LINE_OFFSET = 10):
 
     self.download_directory = DOWNLOAD_DIRECTORY
     self.title_fontsize = TITLE_FONTSIZE
     self.alt_fontsize = ALT_FONTSIZE
     self.line_offset = LINE_OFFSET
-    self.wrap_width = WRAP_WIDTH
 
   def fetchJSON(self, comic_number):
     from json import loads
@@ -33,16 +31,23 @@ class XKCD_downloader:
   def formatImage(self, image, title, alt, tfont = 'title.ttf', afont = 'alt.ttf'):
 
     img = Image.open(image)
+    wrap_width = int(img.size[0] * 0.183+0.001*1/2 * 5/self.alt_fontsize)
+
+    # Font sizing is a pain in the ass
 
     title_font = ImageFont.truetype(tfont, self.title_fontsize)
     title_font_width, title_font_height = title_font.getsize(title)
-    title = wrap(title, self.wrap_width)
-    title_crop = title_font_height + self.line_offset * (len(title) + 2)
+    title = wrap(title, int(img.size[0] * 0.09+0.001*1/2))
+
+    if not title or title[0] == '...' and len(title) == 1: title_crop = 0
+    else: title_crop = title_font_height + self.line_offset * (len(title) * 2) + 15
 
     alt_font = ImageFont.truetype(afont, self.alt_fontsize)
     alt_font_width, alt_font_height = alt_font.getsize(alt)
-    alt = wrap(alt, self.wrap_width)
-    alt_crop = alt_font_height * len(alt) + self.line_offset * len(alt) + 10
+    alt = wrap(alt, wrap_width)
+
+    if not alt or alt[0] == '...' and len(alt) == 1: alt_crop = 0
+    else: alt_crop = alt_font_height * len(alt) + self.line_offset * len(alt) + 15
 
     img_width, img_height = img.size
     img = img.crop((0, -1 * title_crop, img_width, img_height + alt_crop))
