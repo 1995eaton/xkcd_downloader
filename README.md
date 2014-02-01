@@ -5,7 +5,8 @@ Python modules required: Pillow
 ```shell
 sudo pip install Pillow
 ```
-Example-usage:
+Example-usage
+-------------
 
 Fetch comics 150 through 170:
 ```shell
