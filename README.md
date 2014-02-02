@@ -10,7 +10,11 @@ Example-usage
 
 Fetch comics 150 through 170:
 ```shell
-python xkcd_image.py 150-170
+python xkcd_image.py -r 150 170
+```
+Specify output directory (default: './'):
+```shell
+python xkcd_image.py -o images
 ```
 Fetch the most recent strip:
 ```shell
@@ -26,25 +30,25 @@ python xkcd_image.py 188 200 350
 ```
 Fetch only the image:
 ```shell
-python xkcd_image.py 188-250 -download-only
+python xkcd_image.py -d 188
 ```
 Fetch all comics:
 ```shell
-python xkcd_image.py -fetch-all
+python xkcd_image.py -a
 ```
 Fetch all comics (images-only):
 ```shell
-python xkcd_image.py -fetch-all -download-only
+python xkcd_image.py -ad
 ```
 Fetch a random comic:
 ```shell
-python xkcd_image.py -random
-python xkcd_image.py -random -download-only
+python xkcd_image.py --random
+python xkcd_image.py --random -d
 ```
 Fetch 5 random comics:
 ```shell
-python xkcd_image.py -random 5
-python xkcd_image.py -random 5 -download-only
+python xkcd_image.py --random 5
+python xkcd_image.py --random 5 -d
 ```
 
 Configuration
