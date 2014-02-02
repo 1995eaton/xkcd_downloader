@@ -5,6 +5,7 @@ from urllib.request import urlopen
 from random import randrange
 from textwrap import wrap
 from json import loads
+from re import search
 import argparse, os
 
 class XKCD_downloader:
@@ -85,10 +86,10 @@ class XKCD_downloader:
       print("Error: URL could not be reached!")
       return
     title, alt, num = info['safe_title'], info['alt'], str(info['num'])
-    image = '{0}.png'.format(num)
+    image = num+search("\.([a-z])+$", info['img']).group()
     with open(self.download_dir+'/'+image, 'wb') as image_file:
       image_file.write(urlopen(info['img']).read())
-      if not download_only:
+      if not download_only and not search("\.gif", info['img']):
         print("Processing comic -> {0}".format(comic_number))
         self.formatImage(self.download_dir+'/'+image, title, alt)
 
