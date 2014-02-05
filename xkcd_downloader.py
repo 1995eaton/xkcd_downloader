@@ -10,15 +10,21 @@ import argparse
 import os
 
 
-class XKCD_downloader:
+class xkcd_downloader:
 
     def __init__(self, download_dir):
+        if not os.path.exists(download_dir+os.path.sep):
+            print("Error:", "'"+download_dir+"', no such directory")
+            raise SystemExit
+        if not os.access(download_dir, os.W_OK):
+            print("Error:", "'"+download_dir+"', permission denied")
+            raise SystemExit
         self.download_dir = download_dir
         self.title_fontsize = 28
         self.alt_fontsize = 18
         self.line_offset = 10
 
-    def fetchJSON(self, comic_number):
+    def download_json(self, comic_number):
         if comic_number < 0:
             return None
         try:
@@ -26,12 +32,12 @@ class XKCD_downloader:
                 return get("http://xkcd.com/info.0.json").json()
             else:
                 return get("http://xkcd.com/{0}/info.0.json".
-                           format(str(comic_number))).json()
-        except:
+                           format(comic_number)).json()
+        except (ConnectionError, ValueError):
             return None
 
-    def formatImage(self, image, title, alt, tfont='title.ttf',
-                    afont='alt.ttf'):
+    def add_text(self, image, title, alt, tfont='title.ttf',
+                 afont='alt.ttf'):
 
         try:
             img = Image.open(image)
@@ -78,14 +84,7 @@ class XKCD_downloader:
 
         img.save(image)
 
-    def checkPath(self):
-        if self.download_dir[-1] == '/':
-            self.download_dir = self.download_dir[:-1]
-        if not os.path.exists(self.download_dir):
-            os.makedirs(self.download_dir)
-
-    def fetchImages(self, comic_number, download_only):
-        self.checkPath()
+    def download_images(self, comic_number, download_only):
         images = []
         if comic_number == 404:
             return
@@ -93,9 +92,9 @@ class XKCD_downloader:
             print("Fetching comic -> Latest".format(comic_number))
         else:
             print("Fetching comic -> {0}".format(comic_number))
-        info = self.fetchJSON(comic_number)
+        info = self.download_json(comic_number)
         if not info:
-            print("Error: URL could not be reached!")
+            print("Error: URL could not be retrieved")
             return
         title, alt, num = info['safe_title'], info['alt'], str(info['num'])
         image = num+search("\.([a-z])+$", info['img']).group()
@@ -107,54 +106,69 @@ class XKCD_downloader:
                     image_file.flush()
             if not download_only and not search("\.gif", info['img']):
                 print("Processing comic -> {0}".format(comic_number))
-                self.formatImage(self.download_dir+'/'+image, title, alt)
+                self.add_text(self.download_dir+'/'+image, title, alt)
 
-    def getAll(self, download_only):
-        for i in range(1, self.fetchJSON(0)['num']+1):
-            self.fetchImages(i, download_only)
+    def download_all(self, download_only):
+        for i in range(1, self.download_json(0)['num']+1):
+            self.download_images(i, download_only)
 
-    def getRandom(self, download_only, iterations=1):
-        info = self.fetchJSON(0)
+    def download_random(self, download_only, iterations=1):
+        info = self.download_json(0)
         if not info:
             raise Exception("Error URL could not be reached!")
         else:
             for i in range(iterations):
-                self.fetchImages(randrange(1, info['num']+1), download_only)
+                self.download_images(randrange(1, info['num']+1),
+                                     download_only)
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Retrieve and embed the titles and alt text from XKCD comics into single images.', prefix_chars='-+')
-    parser.add_argument('N', type=int, nargs='*', help='an integer or set of integers greater than or equal to zero')
-    parser.add_argument('-r', '--range', action="store", metavar='N', type=int, nargs=2, help='fetch comics within a certain range')
-    parser.add_argument('-o', '--output-dir', metavar='DIRECTORY', action='store', default='./', help='change the output directory. default: current directory')
-    parser.add_argument('-a', '--all', action='store_true', help='fetch all comics')
-    parser.add_argument('-d', '--download-only', action='store_true', help='download images only')
-    parser.add_argument('--random', metavar='ITERATIONS', type=int, help='fetch random comics', nargs='?', const=1)
+    parser = argparse.ArgumentParser(description='Retrieve and embed the\
+                                     titles and alt text from XKCD comics\
+                                     into single images.', prefix_chars='-+')
+    parser.add_argument('N', type=int, nargs='*', help='an integer or set\
+                        of integers greater than or equal to zero')
+    parser.add_argument('-r', '--range', action="store", metavar='N',
+                        type=int, nargs=2, help='fetch comics within\
+                        a certain range')
+    parser.add_argument('-o', '--output-dir', metavar='DIRECTORY',
+                        action='store', default='./', help='change the\
+                        output directory. default: current directory')
+    parser.add_argument('-a', '--all', action='store_true',
+                        help='fetch all comics')
+    parser.add_argument('-d', '--download-only', action='store_true',
+                        help='download images only')
+    parser.add_argument('--random', metavar='ITERATIONS', type=int,
+                        help='fetch random comics', nargs='?', const=1)
     args = parser.parse_args()
 
-    x = XKCD_downloader(args.output_dir)
+    x = xkcd_downloader(args.output_dir)
     if args.range:
         if args.N or args.random or args.all:
-            raise argparse.ArgumentTypeError("Value may not be used in addition to the --range flag".format(args.N))
+            raise argparse.ArgumentTypeError("Value may not be used in\
+                                             addition to the --range flag")
         else:
             for i in range(args.range[0], args.range[1]+1):
-                x.fetchImages(i, args.download_only)
+                x.download_images(i, args.download_only)
             return
     if args.all:
         if args.N or args.random:
-            raise argparse.ArgumentTypeError("Value may not be used in addition to the --all flag".format(args.N))
-        return x.getAll(args.download_only)
+            raise argparse.ArgumentTypeError("Value may not be used in\
+                                             addition to the --all flag")
+        return x.download_all(args.download_only)
 
     if args.random:
         if args.N:
-            raise argparse.ArgumentTypeError("'{0}': Value may not be used in addition to the --random flag".format(args.N))
-        return x.getRandom(args.download_only, args.random)
+            raise argparse.ArgumentTypeError("'{0}': Value may not be used\
+                                             in addition to the --random\
+                                             flag".format(args.N))
+        return x.download_random(args.download_only, args.random)
     else:
         if not args.N:
             parser.print_help()
         for i in args.N:
-            x.fetchImages(i, args.download_only)
+            x.download_images(i, args.download_only)
         return
 
 if __name__ == '__main__':
@@ -162,4 +176,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         raise SystemExit
-
