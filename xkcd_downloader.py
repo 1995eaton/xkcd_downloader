@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from PIL import Image, ImageDraw, ImageFont
 from requests import get
@@ -33,54 +33,90 @@ class xkcd_downloader:
             else:
                 return get("http://xkcd.com/{0}/info.0.json".
                            format(comic_number)).json()
-        except (ConnectionError, ValueError):
+        except (requests.exceptions.ConnectionError, ValueError):
             return None
 
-    def add_text(self, image, title, alt, tfont='title.ttf',
-                 afont='alt.ttf'):
+    def text_wrap(self, font, text, image_width, i=0):
+        lines = [[]]
+        text = text.split(" ")
+        while len(text) > 0:
+            while len(text) > 0 \
+                    and font.getsize(" ".join(lines[i]))[0] < image_width:
+                if font.getsize(text[0]+" "+" ".join(lines[i]))[0] \
+                        > image_width*0.95:
+                    if len(lines[i]) == 0:
+                        text[0] = text[0][:len(text[0])//2+1] \
+                            + " " + text[0][:len(text[0])//2+1:]
+                        text = text[0].split(" ") + text[1:]
+                    break
+                lines[i].append(text[0])
+                text.pop(0)
+            i += 1
+            lines.append([])
+        sub = []
+        for e, i in enumerate(lines):
+            if font.getsize(" ".join(lines[e]))[0] > image_width:
+                temp_str = ""
+                for c in "".join(i):
+                    if font.getsize(temp_str+c)[0] > image_width:
+                        lines[i] = lines[i][:len(lines[i])//2] \
+                            + lines[i][len(lines[i])//2:]
+                        break
+                    temp_str += c
+                sub.append(temp_str)
+                del lines[e]
+        lines = [i for i in lines if len(i) != 0]
+        for c in [i for i in sub if len(i) != 0]:
+            lines.append(c)
+        return lines
+
+    def add_text(self, image, title, alt, tfont='xkcd.ttf',
+                 afont='xkcd.ttf'):
 
         try:
             img = Image.open(image)
         except OSError:
             return
 
-        wrap_width = int(img.size[0]*0.183+0.0025/self.alt_fontsize)
-
-        title_font = ImageFont.truetype(tfont, self.title_fontsize)
-        title_font_width, title_font_height = title_font.getsize(title)
-        title = wrap(title, int(img.size[0]*0.09+0.0005))
-
-        if not title or title[0] == '...' and len(title) == 1:
-            title_crop = 0
-        else:
-            title_crop = title_font_height+self.line_offset*len(title)*2+15
-
-        alt_font = ImageFont.truetype(afont, self.alt_fontsize)
-        alt_font_width, alt_font_height = alt_font.getsize(alt)
-        alt = wrap(alt, wrap_width-15)
-
-        if not alt or alt[0] == '...' and len(alt) == 1:
-            alt_crop = 0
-        else:
-            alt_crop = alt_font_height*len(alt)+self.line_offset*len(alt)+15
-
-        img_width, img_height = img.size
-        img = img.crop((0, -1*title_crop, img_width, img_height+alt_crop))
-        img_width, img_height = img.size
-
+        tfont = ImageFont.truetype("xkcd.ttf", self.title_fontsize)
+        afont = ImageFont.truetype("xkcd.ttf", self.alt_fontsize)
+        twidth, theight = tfont.getsize(title)
+        awidth, aheight = afont.getsize(alt)
+        line_padding = 5
         draw = ImageDraw.Draw(img)
-        loffset_temp = self.line_offset
-        for line in title:
-            w, h = draw.textsize(line, font=title_font)
-            draw.text(((img_width-w)/2, loffset_temp), line,
-                      font=title_font, fill=0xffffff)
-            loffset_temp += h
-        loffset_temp = self.line_offset
-        for line in alt:
-            w, h = draw.textsize(line, font=alt_font)
-            draw.text(((img_width-w)/2, img_height-alt_crop+loffset_temp-5),
-                      line, font=alt_font, fill=0xffffff)
-            loffset_temp += h+10
+        lines = self.text_wrap(tfont, title, img.size[0])
+        lheight = max([tfont.getsize(" ".join(i))[1] for i in lines])
+        lheight_total = (lheight+line_padding)*(len(lines))+line_padding*4
+        title_crop = (0, -1*lheight_total, img.size[0], img.size[1])
+        img = img.crop(title_crop)
+        w, h = img.size
+        old_h = h
+        draw = ImageDraw.Draw(img)
+        lheight_total = line_padding
+        for i in lines:
+            draw.text((w/2-tfont.getsize(" ".join(i))[0]/2,
+                      lheight_total),
+                      " ".join(i),
+                      font=tfont,
+                      fill=0xffffff)
+            lheight_total += lheight + line_padding
+        lheight_total = line_padding
+        lines = self.text_wrap(afont, alt, w)
+        lheight = max([afont.getsize(" ".join(i))[1] for i in lines])
+        lheight_total = lheight*len(lines)
+        alt_crop = (0, 0, img.size[0], img.size[1]+lheight_total+(len(lines)+3)*line_padding)
+        img = img.crop(alt_crop)
+        draw = ImageDraw.Draw(img)
+        lheight_total = old_h + line_padding
+        for i in lines:
+            if not i:
+                continue
+            draw.text((w/2-afont.getsize(" ".join(i))[0]/2,
+                      lheight_total),
+                      " ".join(i),
+                      font=afont,
+                      fill=0xffffff)
+            lheight_total += lheight + line_padding
 
         img.save(image)
 

@@ -1,9 +1,9 @@
 XKCD Downloader
 ===============
 
-Python modules required: Pillow
+Python modules required: Pillow, requests
 ```shell
-sudo pip install Pillow
+sudo pip install Pillow requests
 ```
 Example-usage
 -------------
@@ -54,4 +54,4 @@ python xkcd_downloader.py --random 5 -d
 Configuration
 -------------
 
-Title font size, alt text font size, and line offset can be changed through the variables in the top of the script. The script looks for TTF fonts ('title.ttf' and 'alt.ttf') located in the script directory.
+Title font size, alt text font size, and line offset can be changed through the variables in the top of the script. By default, the script looks for the TTF font file 'xkcd.ttf' located in the script directory.
