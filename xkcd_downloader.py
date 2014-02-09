@@ -104,7 +104,8 @@ class xkcd_downloader:
         lines = self.text_wrap(afont, alt, w)
         lheight = max([afont.getsize(" ".join(i))[1] for i in lines])
         lheight_total = lheight*len(lines)
-        alt_crop = (0, 0, img.size[0], img.size[1]+lheight_total+(len(lines)+3)*line_padding)
+        alt_crop = (0, 0, img.size[0],
+                    img.size[1]+lheight_total+(len(lines)+3)*line_padding)
         img = img.crop(alt_crop)
         draw = ImageDraw.Draw(img)
         lheight_total = old_h + line_padding
